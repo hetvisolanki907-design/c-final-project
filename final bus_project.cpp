@@ -4,14 +4,12 @@
 #include <string>
 #include <fstream>
 #include <sstream>
-#include <algorithm>
 #include <cctype>
-#include <limits>
 #include <stdexcept>
 
 using namespace std;
 
-// Convert text to lowercase for easy searching
+// Convert text to lowercase for case-insensitive searching
 string toLowerCase(string text) {
     for (int i = 0; i < (int)text.length(); i++) {
         text[i] = (char)tolower((unsigned char)text[i]);
@@ -39,31 +37,70 @@ int readInteger(string message) {
     }
 }
 
-// Bus class
-class Bus {
-public:
+// PILLAR 1: ENCAPSULATION
+// PILLAR 2: ABSTRACTION
+// Transport is an abstract base class.
+class Transport {
+private:
     int busNumber;
     string source;
     string destination;
     string departureTime;
 
-    Bus(int number, string start, string end, string time) {
+public:
+    Transport(int number, string start,
+              string end, string time) {
         busNumber = number;
         source = start;
         destination = end;
         departureTime = time;
     }
 
-    void display() {
-        cout << "\nBus Number    : " << busNumber;
-        cout << "\nSource        : " << source;
-        cout << "\nDestination   : " << destination;
-        cout << "\nDeparture Time: " << departureTime;
-        cout << "\n--------------------------------\n";
+    // Public getters provide controlled access to private data
+    int getBusNumber() {
+        return busNumber;
+    }
+
+    string getSource() {
+        return source;
+    }
+
+    string getDestination() {
+        return destination;
+    }
+
+    string getDepartureTime() {
+        return departureTime;
+    }
+
+    // Pure virtual function makes Transport an abstract class
+    virtual void display() = 0;
+
+    virtual ~Transport() {
     }
 };
 
-// Save bus records to a text file
+// PILLAR 3: INHERITANCE
+// Bus inherits the properties and behaviour of Transport.
+class Bus : public Transport {
+public:
+    Bus(int number, string start,
+        string end, string time)
+        : Transport(number, start, end, time) {
+    }
+
+    // PILLAR 4: POLYMORPHISM
+    // Bus provides its own version of display().
+    virtual void display() {
+        cout << "\nBus Number     : " << getBusNumber();
+        cout << "\nSource         : " << getSource();
+        cout << "\nDestination    : " << getDestination();
+        cout << "\nDeparture Time : " << getDepartureTime();
+        cout << "\n----------------------------------\n";
+    }
+};
+
+// Save bus records to a file
 bool saveBuses(vector<Bus> &buses) {
     ofstream file("buses.txt");
 
@@ -72,17 +109,17 @@ bool saveBuses(vector<Bus> &buses) {
     }
 
     for (int i = 0; i < (int)buses.size(); i++) {
-        file << buses[i].busNumber << "|"
-             << buses[i].source << "|"
-             << buses[i].destination << "|"
-             << buses[i].departureTime << "\n";
+        file << buses[i].getBusNumber() << "|"
+             << buses[i].getSource() << "|"
+             << buses[i].getDestination() << "|"
+             << buses[i].getDepartureTime() << "\n";
     }
 
     file.close();
     return !file.fail();
 }
 
-// Load bus records from a text file
+// Load bus records from a file
 bool loadBuses(vector<Bus> &buses) {
     ifstream file("buses.txt");
 
@@ -107,15 +144,13 @@ bool loadBuses(vector<Bus> &buses) {
             char extra;
 
             if (convert >> number && !(convert >> extra) &&
-                number > 0 &&
-                source != "" &&
-                destination != "" &&
-                time != "") {
+                number > 0 && source != "" &&
+                destination != "" && time != "") {
 
                 bool duplicate = false;
 
                 for (int i = 0; i < (int)buses.size(); i++) {
-                    if (buses[i].busNumber == number) {
+                    if (buses[i].getBusNumber() == number) {
                         duplicate = true;
                         break;
                     }
@@ -134,180 +169,123 @@ bool loadBuses(vector<Bus> &buses) {
     return !buses.empty();
 }
 
-// Check whether a bus number already exists
-bool busExists(vector<Bus> &buses, int number) {
-    for (int i = 0; i < (int)buses.size(); i++) {
-        if (buses[i].busNumber == number) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-// Add a new bus
-void addBus(vector<Bus> &buses) {
+int main() {
     try {
-        int number = readInteger("Enter bus number: ");
+        vector<Bus> buses;
 
-        if (number <= 0) {
-            throw runtime_error("Bus number must be positive.");
-        }
+        // Load saved records or create sample records
+        if (!loadBuses(buses)) {
+            buses.push_back(
+                Bus(101, "Anand", "Vallabh Vidyanagar", "8:00 AM")
+            );
+            buses.push_back(
+                Bus(102, "Anand", "Nadiad", "9:00 AM")
+            );
+            buses.push_back(
+                Bus(103, "Vadodara", "Anand", "10:00 AM")
+            );
+            buses.push_back(
+                Bus(104, "Anand", "Petlad", "11:00 AM")
+            );
+            buses.push_back(
+                Bus(105, "Nadiad", "Vadodara", "12:00 PM")
+            );
 
-        if (busExists(buses, number)) {
-            throw runtime_error("This bus number already exists.");
-        }
-
-        string source, destination, time;
-
-        cout << "Enter source: ";
-        getline(cin, source);
-
-        cout << "Enter destination: ";
-        getline(cin, destination);
-
-        cout << "Enter departure time: ";
-        getline(cin, time);
-
-        if (source.empty() || destination.empty() || time.empty()) {
-            throw runtime_error("Bus details cannot be empty.");
-        }
-
-        if (source.find('|') != string::npos ||
-            destination.find('|') != string::npos ||
-            time.find('|') != string::npos) {
-            throw runtime_error("The | symbol is not allowed.");
-        }
-
-        buses.push_back(Bus(number, source, destination, time));
-
-        if (saveBuses(buses)) {
-            cout << "\nBus added and saved successfully!\n";
+            if (saveBuses(buses)) {
+                cout << "Sample bus records created successfully.\n";
+            } else {
+                cout << "Warning: Could not save bus records.\n";
+            }
         } else {
-            cout << "\nBus added in memory, but file saving failed.\n";
+            cout << "Saved bus records loaded successfully.\n";
         }
+
+        int choice;
+
+        do {
+            cout << "\n====================================\n";
+            cout << "     CITY BUS MANAGEMENT SYSTEM\n";
+            cout << "====================================\n";
+            cout << "1. View All Buses\n";
+            cout << "2. Search Bus by Number\n";
+            cout << "3. Search Bus by Route\n";
+            cout << "4. Total Registered Buses\n";
+            cout << "5. Exit\n";
+            cout << "====================================\n";
+
+            choice = readInteger("Enter your choice: ");
+
+            if (choice == 1) {
+                // Polymorphism: call display through a base-class pointer
+                for (int i = 0; i < (int)buses.size(); i++) {
+                    Transport *transport = &buses[i];
+                    transport->display();
+                }
+            }
+
+            else if (choice == 2) {
+                int number = readInteger("Enter bus number: ");
+                bool found = false;
+
+                for (int i = 0; i < (int)buses.size(); i++) {
+                    if (buses[i].getBusNumber() == number) {
+                        buses[i].display();
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    cout << "Sorry! Bus not found.\n";
+                }
+            }
+
+            else if (choice == 3) {
+                string start, end;
+
+                cout << "Enter source: ";
+                getline(cin, start);
+
+                cout << "Enter destination: ";
+                getline(cin, end);
+
+                bool found = false;
+
+                for (int i = 0; i < (int)buses.size(); i++) {
+                    if (toLowerCase(buses[i].getSource()) ==
+                            toLowerCase(start) &&
+                        toLowerCase(buses[i].getDestination()) ==
+                            toLowerCase(end)) {
+
+                        buses[i].display();
+                        found = true;
+                    }
+                }
+
+                if (!found) {
+                    cout << "No bus found for this route.\n";
+                    cout << "Please check the spelling of the locations.\n";
+                }
+            }
+
+            else if (choice == 4) {
+                cout << "Total registered buses: "
+                     << buses.size() << "\n";
+            }
+
+            else if (choice == 5) {
+                cout << "Thank you for using City Bus Management System!\n";
+            }
+
+            else {
+                cout << "Invalid choice! Please select from 1 to 5.\n";
+            }
+
+        } while (choice != 5);
     }
     catch (const exception &e) {
-        cout << "\nError: " << e.what() << "\n";
+        cout << "An unexpected error occurred: " << e.what() << "\n";
     }
-}
-
-int main() {
-    vector<Bus> buses;
-
-    // Load saved records; create sample records on first run
-    if (!loadBuses(buses)) {
-        buses.push_back(
-            Bus(101, "Anand", "Vallabh Vidyanagar", "8:00 AM")
-        );
-        buses.push_back(
-            Bus(102, "Anand", "Nadiad", "9:00 AM")
-        );
-        buses.push_back(
-            Bus(103, "Vadodara", "Anand", "10:00 AM")
-        );
-        buses.push_back(
-            Bus(104, "Anand", "Petlad", "11:00 AM")
-        );
-        buses.push_back(
-            Bus(105, "Nadiad", "Vadodara", "12:00 PM")
-        );
-
-        if (saveBuses(buses)) {
-            cout << "Sample bus records created.\n";
-        } else {
-            cout << "Warning: Could not save sample records.\n";
-        }
-    } else {
-        cout << "Saved bus records loaded successfully.\n";
-    }
-
-    int choice;
-
-    do {
-        cout << "\n====================================\n";
-        cout << "     CITY BUS MANAGEMENT SYSTEM\n";
-        cout << "====================================\n";
-        cout << "1. View All Buses\n";
-        cout << "2. Search Bus by Number\n";
-        cout << "3. Search Bus by Route\n";
-        cout << "4. Add New Bus\n";
-        cout << "5. Total Registered Buses\n";
-        cout << "6. Exit\n";
-        cout << "====================================\n";
-
-        choice = readInteger("Enter your choice: ");
-
-        if (choice == 1) {
-            for (int i = 0; i < (int)buses.size(); i++) {
-                buses[i].display();
-            }
-        }
-
-        else if (choice == 2) {
-            int number = readInteger("Enter bus number: ");
-            bool found = false;
-
-            for (int i = 0; i < (int)buses.size(); i++) {
-                if (buses[i].busNumber == number) {
-                    buses[i].display();
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                cout << "Sorry! Bus not found.\n";
-            }
-        }
-
-        else if (choice == 3) {
-            string start, end;
-
-            cout << "Enter source: ";
-            getline(cin, start);
-
-            cout << "Enter destination: ";
-            getline(cin, end);
-
-            bool found = false;
-
-            for (int i = 0; i < (int)buses.size(); i++) {
-                if (toLowerCase(buses[i].source) ==
-                        toLowerCase(start) &&
-                    toLowerCase(buses[i].destination) ==
-                        toLowerCase(end)) {
-
-                    buses[i].display();
-                    found = true;
-                }
-            }
-
-            if (!found) {
-                cout << "No bus found for this route.\n";
-                cout << "Please check the source and destination.\n";
-            }
-        }
-
-        else if (choice == 4) {
-            addBus(buses);
-        }
-
-        else if (choice == 5) {
-            cout << "Total registered buses: "
-                 << buses.size() << "\n";
-        }
-
-        else if (choice == 6) {
-            cout << "Thank you for using City Bus Management System!\n";
-        }
-
-        else {
-            cout << "Invalid choice! Select from 1 to 6.\n";
-        }
-
-    } while (choice != 6);
 
     return 0;
 }
-
