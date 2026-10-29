@@ -9,7 +9,7 @@
 
 using namespace std;
 
-// Convert text to lowercase for case-insensitive searching
+
 string toLowerCase(string text) {
     for (int i = 0; i < (int)text.length(); i++) {
         text[i] = (char)tolower((unsigned char)text[i]);
@@ -17,7 +17,7 @@ string toLowerCase(string text) {
     return text;
 }
 
-// Read an integer safely
+
 int readInteger(string message) {
     string line;
     int number;
@@ -37,9 +37,7 @@ int readInteger(string message) {
     }
 }
 
-// PILLAR 1: ENCAPSULATION
-// PILLAR 2: ABSTRACTION
-// Transport is an abstract base class.
+
 class Transport {
 private:
     int busNumber;
@@ -56,7 +54,7 @@ public:
         departureTime = time;
     }
 
-    // Public getters provide controlled access to private data
+   
     int getBusNumber() {
         return busNumber;
     }
@@ -73,15 +71,14 @@ public:
         return departureTime;
     }
 
-    // Pure virtual function makes Transport an abstract class
+  
     virtual void display() = 0;
 
     virtual ~Transport() {
     }
 };
 
-// PILLAR 3: INHERITANCE
-// Bus inherits the properties and behaviour of Transport.
+
 class Bus : public Transport {
 public:
     Bus(int number, string start,
@@ -89,8 +86,7 @@ public:
         : Transport(number, start, end, time) {
     }
 
-    // PILLAR 4: POLYMORPHISM
-    // Bus provides its own version of display().
+    
     virtual void display() {
         cout << "\nBus Number     : " << getBusNumber();
         cout << "\nSource         : " << getSource();
@@ -100,7 +96,7 @@ public:
     }
 };
 
-// Save bus records to a file
+
 bool saveBuses(vector<Bus> &buses) {
     ofstream file("buses.txt");
 
@@ -119,7 +115,7 @@ bool saveBuses(vector<Bus> &buses) {
     return !file.fail();
 }
 
-// Load bus records from a file
+
 bool loadBuses(vector<Bus> &buses) {
     ifstream file("buses.txt");
 
@@ -173,7 +169,7 @@ int main() {
     try {
         vector<Bus> buses;
 
-        // Load saved records or create sample records
+        
         if (!loadBuses(buses)) {
             buses.push_back(
                 Bus(101, "Anand", "Vallabh Vidyanagar", "8:00 AM")
